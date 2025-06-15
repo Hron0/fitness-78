@@ -11,8 +11,8 @@ export const bookingFormSchema = z.object({
   name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
   email: z.string().email("Введите корректный email"),
   phone: z.string().optional(),
-  trainerId: z.string().min(1, "Выберите тренера"),
-  workoutId: z.string().min(1, "Выберите тренировку"),
+  trainerId: z.number().min(1, "Выберите тренера"),
+  workoutId: z.number().min(1, "Выберите тренировку"),
   date: z.date({
     required_error: "Выберите дату",
   }),

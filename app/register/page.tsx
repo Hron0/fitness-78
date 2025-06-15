@@ -1,39 +1,92 @@
 "use client"
 
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { AuthService } from "@/lib/auth"
+import { registerFormSchema, type RegisterFormData } from "@/lib/validations"
+import { z } from "zod"
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     name: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
   })
+  const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<Partial<RegisterFormData>>({})
+  const { toast } = useToast()
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
+    setErrors({})
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Пароли не совпадают")
-      return
+    try {
+      // Validate form data
+      const validatedData = registerFormSchema.parse(formData)
+
+      // Register user
+      const { user, error } = await AuthService.register({
+        name: validatedData.name,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        password: validatedData.password,
+      })
+
+      if (error) {
+        toast({
+          title: "Ошибка регистрации",
+          description: error,
+          variant: "destructive",
+        })
+        return
+      }
+
+      if (user) {
+        // Save user and redirect
+        AuthService.saveUser(user)
+        toast({
+          title: "Регистрация успешна",
+          description: "Добро пожаловать в Fitness+!",
+        })
+        router.push("/")
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Partial<RegisterFormData> = {}
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as keyof RegisterFormData] = err.message
+          }
+        })
+        setErrors(fieldErrors)
+      } else {
+        toast({
+          title: "Ошибка",
+          description: "Произошла неожиданная ошибка",
+          variant: "destructive",
+        })
+      }
+    } finally {
+      setLoading(false)
     }
-
-    // Здесь будет логика регистрации
-    console.log("Registration attempt:", formData)
-    alert("Функция регистрации будет реализована с подключением к базе данных")
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    // Clear error when user starts typing
+    if (errors[name as keyof RegisterFormData]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
+    }
   }
 
   return (
@@ -59,6 +112,7 @@ export default function RegisterPage() {
                 className="bg-[#2A2A2A] border-gray-600 text-white"
                 placeholder="Ваше имя"
               />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
 
             <div>
@@ -75,6 +129,7 @@ export default function RegisterPage() {
                 className="bg-[#2A2A2A] border-gray-600 text-white"
                 placeholder="your@email.com"
               />
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
 
             <div>
@@ -89,6 +144,7 @@ export default function RegisterPage() {
                 className="bg-[#2A2A2A] border-gray-600 text-white"
                 placeholder="+7 (___) ___-__-__"
               />
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
             </div>
 
             <div>
@@ -105,6 +161,7 @@ export default function RegisterPage() {
                 className="bg-[#2A2A2A] border-gray-600 text-white"
                 placeholder="••••••••"
               />
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
 
             <div>
@@ -121,10 +178,15 @@ export default function RegisterPage() {
                 className="bg-[#2A2A2A] border-gray-600 text-white"
                 placeholder="••••••••"
               />
+              {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
             </div>
 
-            <Button type="submit" className="w-full bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white py-3">
-              Зарегистрироваться
+            <Button
+              type="submit"
+              className="w-full bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white py-3"
+              disabled={loading}
+            >
+              {loading ? "Регистрация..." : "Зарегистрироваться"}
             </Button>
           </form>
 
