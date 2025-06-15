@@ -39,9 +39,9 @@ export default function AdminPage() {
   const loadData = async () => {
     try {
       const [trainersRes, workoutsRes, bookingsRes, messagesRes] = await Promise.all([
-        supabase.from("trainers").select("*"),
-        supabase.from("workouts").select("*, trainer:trainers(*)"),
-        supabase.from("bookings").select("*, trainer:trainers(*), workout:workouts(*), user:users(name, email)"),
+        supabase.from("coaches").select("*"),
+        supabase.from("workouts").select("*"),
+        supabase.from("bookings").select("*, coach:coaches(*), workout:workouts(*), user:users(name, email)"),
         supabase.from("contact_messages").select("*").order("created_at", { ascending: false }),
       ])
 
@@ -231,13 +231,12 @@ export default function AdminPage() {
                         <div className="flex justify-between items-start">
                           <div>
                             <h3 className="font-bold text-white">{booking.workout?.title}</h3>
-                            <p className="text-gray-300">Тренер: {booking.trainer?.name}</p>
+                            <p className="text-gray-300">Тренер: {booking.coach?.name}</p>
                             <p className="text-gray-300">
                               Клиент: {booking.user?.name} ({booking.user?.email})
                             </p>
                             <p className="text-gray-400 text-sm">
                               {new Date(booking.booking_date).toLocaleDateString("ru-RU")}
-                              {booking.booking_time && ` в ${booking.booking_time}`}
                             </p>
                           </div>
                           <div className="flex gap-2">
@@ -352,7 +351,7 @@ export default function AdminPage() {
                     <div key={trainer.id} className="bg-[#2A2A2A] p-4 rounded-lg">
                       <h3 className="font-bold text-white mb-2">{trainer.name}</h3>
                       <p className="text-gray-300 mb-1">{trainer.specialization}</p>
-                      <p className="text-gray-400 text-sm mb-2">Опыт: {trainer.experience} лет</p>
+                      <p className="text-gray-400 text-sm mb-2">Опыт: {trainer.experience_years} лет</p>
                       <p className="text-gray-400 text-sm mb-2">Рейтинг: {trainer.rating}/5</p>
                       <p className="text-[#FF5E14] font-bold">{trainer.price_per_hour} ₽/час</p>
                       <div className="flex gap-2 mt-3">
@@ -380,11 +379,9 @@ export default function AdminPage() {
                   {workouts.map((workout) => (
                     <div key={workout.id} className="bg-[#2A2A2A] p-4 rounded-lg">
                       <h3 className="font-bold text-white mb-2">{workout.title}</h3>
-                      <p className="text-gray-300 mb-1">{workout.category}</p>
                       <p className="text-gray-400 text-sm mb-2">
                         {workout.duration} мин • {workout.difficulty}
                       </p>
-                      <p className="text-gray-300 text-sm mb-2">Тренер: {workout.trainer?.name}</p>
                       <div className="flex gap-2 mt-3">
                         <Button size="sm" variant="outline">
                           Редактировать

@@ -1,212 +1,201 @@
 import { supabase } from "./supabase"
 import type { Trainer, Workout, Booking, ContactMessage } from "./supabase"
 
-// Trainers/Coaches operations
+// Debug function to check database connection and tables
+export async function debugDatabase() {
+  try {
+    console.log("🔍 Testing database connection...")
+
+    // Test basic connection
+    const { data: connectionTest, error: connectionError } = await supabase
+      .from("coaches")
+      .select("count", { count: "exact", head: true })
+
+    if (connectionError) {
+      console.error("❌ Database connection failed:", connectionError)
+      return false
+    }
+
+    console.log("✅ Database connection successful")
+    return true
+  } catch (error) {
+    console.error("❌ Database debug failed:", error)
+    return false
+  }
+}
+
+// Get all trainers/coaches
 export async function getTrainers(): Promise<Trainer[]> {
   try {
-    console.log("Fetching trainers from coaches table...")
+    console.log("📊 Fetching trainers from coaches table...")
 
     const { data, error } = await supabase.from("coaches").select("*").order("name")
 
     if (error) {
-      console.error("Error fetching trainers:", error)
+      console.error("❌ Error fetching from coaches table:", error.message)
       throw new Error(`Failed to fetch trainers: ${error.message}`)
     }
 
-    console.log("Trainers fetched successfully:", data?.length || 0)
-    return data || []
-  } catch (error) {
-    console.error("Database error:", error)
-    throw error
-  }
-}
-
-export async function getTrainerById(id: number): Promise<Trainer | null> {
-  try {
-    const { data, error } = await supabase.from("coaches").select("*").eq("id", id).single()
-
-    if (error) {
-      console.error("Error fetching trainer:", error)
-      return null
+    if (!data) {
+      console.log("⚠️ No trainers found")
+      return []
     }
 
-    return data
+    // Map coaches data to trainer interface
+    const trainers: Trainer[] = data.map((coach) => ({
+      id: coach.id,
+      name: coach.name,
+      specialization: coach.specialization,
+      experience: coach.experience_years, // Map experience_years to experience
+      rating: coach.rating,
+      price_per_hour: coach.price_per_hour,
+      description: coach.description,
+      created_at: coach.created_at,
+      updated_at: coach.updated_at,
+    }))
+
+    console.log(`✅ Successfully fetched ${trainers.length} trainers`)
+    return trainers
   } catch (error) {
-    console.error("Database error:", error)
-    return null
+    console.error("❌ Error in getTrainers:", error)
+    throw new Error("Failed to fetch trainers")
   }
 }
 
-// Workouts operations
+// Get all workouts
 export async function getWorkouts(): Promise<Workout[]> {
   try {
-    console.log("Fetching workouts...")
+    console.log("📊 Fetching workouts...")
 
-    const { data, error } = await supabase.from("workouts").select("*").order("title")
+    // First try to get workouts with trainer relationship
+    const { data, error } = await supabase
+      .from("workouts")
+      .select(`
+        *,
+        coach:coaches(*)
+      `)
+      .order("title")
 
     if (error) {
-      console.error("Error fetching workouts:", error)
-      throw new Error(`Failed to fetch workouts: ${error.message}`)
-    }
+      console.error("❌ Error fetching workouts with relationship:", error.message)
 
-    console.log("Workouts fetched successfully:", data?.length || 0)
+      // Fallback: get workouts without relationship
+      const { data: fallbackData, error: fallbackError } = await supabase.from("workouts").select("*").order("title")
 
-    // Manually fetch trainers for each workout
-    const workoutsWithTrainers = await Promise.all(
-      (data || []).map(async (workout) => {
-        if (workout.trainer_id) {
-          const trainer = await getTrainerById(workout.trainer_id)
-          return { ...workout, trainer }
+      if (fallbackError) {
+        throw new Error(`Failed to fetch workouts: ${fallbackError.message}`)
+      }
+
+      // Get coaches separately and map them
+      const { data: coaches } = await supabase.from("coaches").select("*")
+
+      const workouts: Workout[] = (fallbackData || []).map((workout) => {
+        const trainer = coaches?.find((coach) => coach.id === workout.coach_id)
+        return {
+          ...workout,
+          trainer: trainer
+            ? {
+                id: trainer.id,
+                name: trainer.name,
+                specialization: trainer.specialization,
+                experience: trainer.experience_years,
+                rating: trainer.rating,
+                price_per_hour: trainer.price_per_hour,
+                description: trainer.description,
+                created_at: trainer.created_at,
+                updated_at: trainer.updated_at,
+              }
+            : undefined,
         }
-        return { ...workout, trainer: null }
-      }),
-    )
+      })
 
-    return workoutsWithTrainers
+      console.log(`✅ Successfully fetched ${workouts.length} workouts (fallback)`)
+      return workouts
+    }
+
+    if (!data) {
+      console.log("⚠️ No workouts found")
+      return []
+    }
+
+    // Map the data to ensure proper structure
+    const workouts: Workout[] = data.map((workout) => ({
+      ...workout,
+      trainer: workout.coach
+        ? {
+            id: workout.coach.id,
+            name: workout.coach.name,
+            specialization: workout.coach.specialization,
+            experience: workout.coach.experience_years,
+            rating: workout.coach.rating,
+            price_per_hour: workout.coach.price_per_hour,
+            description: workout.coach.description,
+            created_at: workout.coach.created_at,
+            updated_at: workout.coach.updated_at,
+          }
+        : undefined,
+    }))
+
+    console.log(`✅ Successfully fetched ${workouts.length} workouts`)
+    return workouts
   } catch (error) {
-    console.error("Database error:", error)
-    throw error
+    console.error("❌ Error in getWorkouts:", error)
+    throw new Error("Failed to fetch workouts")
   }
 }
 
-export async function getWorkoutById(id: number): Promise<Workout | null> {
-  try {
-    const { data, error } = await supabase.from("workouts").select("*").eq("id", id).single()
-
-    if (error) {
-      console.error("Error fetching workout:", error)
-      return null
-    }
-
-    // Manually fetch trainer if exists
-    let trainer = null
-    if (data.trainer_id) {
-      trainer = await getTrainerById(data.trainer_id)
-    }
-
-    return { ...data, trainer }
-  } catch (error) {
-    console.error("Database error:", error)
-    return null
-  }
-}
-
-// Bookings operations
+// Create a new booking
 export async function createBooking(booking: Omit<Booking, "id" | "created_at" | "updated_at">): Promise<Booking> {
   try {
-    const { data, error } = await supabase.from("bookings").insert(booking).select().single()
+    const { data, error } = await supabase
+      .from("bookings")
+      .insert([
+        {
+          ...booking,
+          coach_id: booking.trainer_id, // Map trainer_id to coach_id for database
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single()
 
     if (error) {
-      console.error("Error creating booking:", error)
       throw new Error(`Failed to create booking: ${error.message}`)
     }
 
     return data
   } catch (error) {
-    console.error("Database error:", error)
+    console.error("Error creating booking:", error)
     throw error
   }
 }
 
-export async function getUserBookings(userId: number): Promise<Booking[]> {
-  try {
-    const { data, error } = await supabase
-      .from("bookings")
-      .select("*")
-      .eq("user_id", userId)
-      .order("booking_date", { ascending: false })
-
-    if (error) {
-      console.error("Error fetching user bookings:", error)
-      throw new Error(`Failed to fetch bookings: ${error.message}`)
-    }
-
-    return data || []
-  } catch (error) {
-    console.error("Database error:", error)
-    throw error
-  }
-}
-
-export async function getAllBookings(): Promise<Booking[]> {
-  try {
-    const { data, error } = await supabase.from("bookings").select("*").order("booking_date", { ascending: false })
-
-    if (error) {
-      console.error("Error fetching all bookings:", error)
-      throw new Error(`Failed to fetch bookings: ${error.message}`)
-    }
-
-    return data || []
-  } catch (error) {
-    console.error("Database error:", error)
-    throw error
-  }
-}
-
-// Contact messages operations
+// Create a contact message
 export async function createContactMessage(
   message: Omit<ContactMessage, "id" | "created_at" | "updated_at" | "status">,
 ): Promise<ContactMessage> {
   try {
     const { data, error } = await supabase
       .from("contact_messages")
-      .insert({ ...message, status: "new" })
+      .insert([
+        {
+          ...message,
+          status: "new",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
       .select()
       .single()
 
     if (error) {
-      console.error("Error creating contact message:", error)
-      throw new Error(`Failed to send message: ${error.message}`)
+      throw new Error(`Failed to create contact message: ${error.message}`)
     }
 
     return data
   } catch (error) {
-    console.error("Database error:", error)
+    console.error("Error creating contact message:", error)
     throw error
   }
-}
-
-export async function getContactMessages(): Promise<ContactMessage[]> {
-  try {
-    const { data, error } = await supabase
-      .from("contact_messages")
-      .select("*")
-      .order("created_at", { ascending: false })
-
-    if (error) {
-      console.error("Error fetching contact messages:", error)
-      throw new Error(`Failed to fetch messages: ${error.message}`)
-    }
-
-    return data || []
-  } catch (error) {
-    console.error("Database error:", error)
-    throw error
-  }
-}
-
-// Debug function to check database tables
-export async function checkDatabaseTables() {
-  const tables = ["users", "coaches", "workouts", "bookings", "contact_messages"]
-  const results: Record<string, any> = {}
-
-  for (const table of tables) {
-    try {
-      const { data, error } = await supabase.from(table).select("*").limit(1)
-      results[table] = {
-        exists: !error,
-        error: error?.message,
-        sampleData: data?.[0] || null,
-      }
-    } catch (err) {
-      results[table] = {
-        exists: false,
-        error: err instanceof Error ? err.message : "Unknown error",
-      }
-    }
-  }
-
-  console.log("Database tables check:", results)
-  return results
 }

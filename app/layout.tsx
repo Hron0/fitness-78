@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import Header from "@/components/layout/header"
 import Footer from "@/components/layout/footer"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "sonner"
 import { Inter } from "next/font/google"
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] })
@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin", "cyrillic"] })
 export const metadata: Metadata = {
   title: "Fitness+ | Премиум фитнес-клуб",
   description: "Премиальный фитнес-клуб с индивидуальным подходом к каждому клиенту",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
         <Header />
         <main className="pt-20">{children}</main>
         <Footer />
-        <Toaster />
+        <Toaster position="top-right" richColors closeButton theme="dark" />
       </body>
     </html>
   )
