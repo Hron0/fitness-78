@@ -2,53 +2,73 @@
 
 import type React from "react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
-import { MapPin, Phone, Mail, Clock } from "lucide-react"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { MapPin, Phone, Mail, Clock } from "lucide-react"
+import { createContactMessage } from "@/lib/database"
+import { useToast } from "@/hooks/use-toast"
+import { LoadingSpinner } from "@/components/loading-spinner"
 
 export default function ContactsPage() {
+  const { toast } = useToast()
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     message: "",
   })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
+
+    if (!formData.name || !formData.email || !formData.message) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все обязательные поля",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await createContactMessage(formData)
 
       toast({
-        title: "Сообщение отправлено!",
-        description: "Мы свяжемся с вами в ближайшее время.",
+        title: "Успешно!",
+        description: "Ваше сообщение отправлено. Мы свяжемся с вами в ближайшее время.",
       })
 
-      setFormData({ name: "", email: "", phone: "", message: "" })
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+      })
     } catch (error) {
+      console.error("Error sending message:", error)
       toast({
         title: "Ошибка",
         description: "Не удалось отправить сообщение. Попробуйте еще раз.",
         variant: "destructive",
       })
     } finally {
-      setIsSubmitting(false)
+      setSubmitting(false)
     }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    })
+    }))
   }
 
   return (
@@ -56,140 +76,134 @@ export default function ContactsPage() {
       <div className="container mx-auto px-5">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-4">
-            <span className="text-[#FF5E14]">Контакты</span>
+            Свяжитесь с <span className="text-[#FF5E14]">Нами</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Свяжитесь с нами любым удобным способом. Мы всегда готовы ответить на ваши вопросы
+            Есть вопросы? Мы всегда готовы помочь вам начать ваш путь к здоровью и фитнесу
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Information */}
-          <div>
-            <h2 className="text-3xl font-bold mb-8">Как нас найти</h2>
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-bold mb-6 text-white">Контактная информация</h2>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <MapPin className="w-6 h-6 text-[#FF5E14] mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">Адрес</h3>
+                    <p className="text-gray-300">г. Москва, ул. Фитнес, д. 123</p>
+                  </div>
+                </div>
 
-            <div className="space-y-6 mb-8">
-              <div className="flex items-start gap-4">
-                <MapPin className="w-6 h-6 text-[#FF5E14] mt-1 flex-shrink-0" />
-                <div>
-                  <h3 className="font-bold text-white mb-1">Адрес</h3>
-                  <p className="text-gray-300">г. Москва, ул. Спортивная, 15</p>
-                  <p className="text-gray-300">метро "Спортивная", 2 минуты пешком</p>
+                <div className="flex items-start gap-4">
+                  <Phone className="w-6 h-6 text-[#FF5E14] mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">Телефон</h3>
+                    <p className="text-gray-300">+7 (495) 123-45-67</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <Mail className="w-6 h-6 text-[#FF5E14] mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">Email</h3>
+                    <p className="text-gray-300">info@fitness-center.ru</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <Clock className="w-6 h-6 text-[#FF5E14] mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">Часы работы</h3>
+                    <div className="text-gray-300">
+                      <p>Пн-Пт: 06:00 - 23:00</p>
+                      <p>Сб-Вс: 08:00 - 22:00</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex items-start gap-4">
-                <Phone className="w-6 h-6 text-[#FF5E14] mt-1 flex-shrink-0" />
-                <div>
-                  <h3 className="font-bold text-white mb-1">Телефон</h3>
-                  <p className="text-gray-300">+7 (495) 123-45-67</p>
-                  <p className="text-gray-300">+7 (926) 123-45-67</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <Mail className="w-6 h-6 text-[#FF5E14] mt-1 flex-shrink-0" />
-                <div>
-                  <h3 className="font-bold text-white mb-1">Email</h3>
-                  <p className="text-gray-300">info@fitnessplus.ru</p>
-                  <p className="text-gray-300">support@fitnessplus.ru</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <Clock className="w-6 h-6 text-[#FF5E14] mt-1 flex-shrink-0" />
-                <div>
-                  <h3 className="font-bold text-white mb-1">Часы работы</h3>
-                  <p className="text-gray-300">Пн-Пт: 7:00 - 23:00</p>
-                  <p className="text-gray-300">Сб-Вс: 8:00 - 22:00</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Map placeholder */}
-            <div className="bg-[#1E1E1E] rounded-lg h-64 flex items-center justify-center">
-              <p className="text-gray-400">Карта будет здесь</p>
             </div>
           </div>
 
           {/* Contact Form */}
-          <div className="bg-[#1E1E1E] p-8 rounded-lg">
-            <h2 className="text-2xl font-bold mb-6">Напишите нам</h2>
-            <p className="text-gray-300 mb-6">Мы ответим в течение 24 часов</p>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+          <Card className="bg-[#1E1E1E] border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Отправить сообщение</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-white">
                     Имя *
-                  </label>
+                  </Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    required
                     className="bg-[#2A2A2A] border-gray-600 text-white"
                     placeholder="Ваше имя"
+                    required
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-white">
+                    Email *
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="bg-[#2A2A2A] border-gray-600 text-white"
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-white">
                     Телефон
-                  </label>
+                  </Label>
                   <Input
                     id="phone"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     className="bg-[#2A2A2A] border-gray-600 text-white"
-                    placeholder="+7 (___) ___-__-__"
+                    placeholder="+7 (999) 123-45-67"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                  Email *
-                </label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="bg-[#2A2A2A] border-gray-600 text-white"
-                  placeholder="your@email.com"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="message" className="text-white">
+                    Сообщение *
+                  </Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    className="bg-[#2A2A2A] border-gray-600 text-white min-h-[120px]"
+                    placeholder="Ваше сообщение..."
+                    required
+                  />
+                </div>
 
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-2">
-                  Сообщение *
-                </label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  rows={5}
-                  className="bg-[#2A2A2A] border-gray-600 text-white"
-                  placeholder="Расскажите, чем мы можем помочь..."
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white py-3"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Отправляем..." : "Отправить сообщение"}
-              </Button>
-            </form>
-          </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white"
+                  disabled={submitting}
+                >
+                  {submitting ? <LoadingSpinner /> : "Отправить сообщение"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
