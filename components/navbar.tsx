@@ -4,9 +4,34 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
+import { AuthService } from "@/lib/auth"
+import { useEffect } from "react"
+import type { AuthUser } from "@/lib/supabase"
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [user, setUser] = useState<AuthUser | null>(null)
+
+  useEffect(() => {
+    // Check for current user on component mount
+    const currentUser = AuthService.getCurrentUser()
+    setUser(currentUser)
+
+    // Listen for storage changes (when user logs in/out in another tab)
+    const handleStorageChange = () => {
+      const updatedUser = AuthService.getCurrentUser()
+      setUser(updatedUser)
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [])
+
+  const handleLogout = () => {
+    AuthService.logout()
+    setUser(null)
+    window.location.href = "/"
+  }
 
   return (
     <header className="fixed w-full bg-black/90 backdrop-blur-sm z-50 py-5">
@@ -36,19 +61,47 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Auth Buttons */}
-          <div className="hidden md:flex gap-4">
-            <Link href="/login">
-              <Button
-                variant="outline"
-                className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
-              >
-                Вход
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white">Регистрация</Button>
-            </Link>
+          {/* Auth Buttons - Desktop */}
+          <div className="hidden md:flex gap-4 items-center">
+            {user ? (
+              <>
+                {AuthService.isAdmin(user) && (
+                  <Link href="/admin">
+                    <Button
+                      variant="outline"
+                      className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                    >
+                      Админ
+                    </Button>
+                  </Link>
+                )}
+                <Link href="/profile">
+                  <Button
+                    variant="outline"
+                    className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                  >
+                    Профиль
+                  </Button>
+                </Link>
+                <Button onClick={handleLogout} className="bg-orange-500 hover:bg-orange-600 text-white">
+                  Выход
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button
+                    variant="outline"
+                    className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                  >
+                    Вход
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button className="bg-orange-500 hover:bg-orange-600 text-white">Регистрация</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -77,14 +130,36 @@ export function Navbar() {
                 Контакты
               </Link>
               <div className="flex gap-2 mt-4">
-                <Link href="/login">
-                  <Button variant="outline" className="border-orange-500 text-orange-500 text-sm">
-                    Вход
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-white text-sm">Регистрация</Button>
-                </Link>
+                {user ? (
+                  <>
+                    {AuthService.isAdmin(user) && (
+                      <Link href="/admin">
+                        <Button variant="outline" className="border-orange-500 text-orange-500 text-sm">
+                          Админ
+                        </Button>
+                      </Link>
+                    )}
+                    <Link href="/profile">
+                      <Button variant="outline" className="border-orange-500 text-orange-500 text-sm">
+                        Профиль
+                      </Button>
+                    </Link>
+                    <Button onClick={handleLogout} className="bg-orange-500 hover:bg-orange-600 text-white text-sm">
+                      Выход
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login">
+                      <Button variant="outline" className="border-orange-500 text-orange-500 text-sm">
+                        Вход
+                      </Button>
+                    </Link>
+                    <Link href="/register">
+                      <Button className="bg-orange-500 hover:bg-orange-600 text-white text-sm">Регистрация</Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
