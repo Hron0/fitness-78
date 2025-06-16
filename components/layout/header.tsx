@@ -2,11 +2,58 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
+import { AuthService } from "@/lib/auth"
+import type { AuthUser } from "@/lib/supabase"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check for current user on component mount
+    const currentUser = AuthService.getCurrentUser()
+    console.log("Header: Current user on mount:", currentUser) // Debug log
+    setUser(currentUser)
+    setIsLoading(false)
+
+    // Listen for storage changes (when user logs in/out in same or other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "fitness_user") {
+        const updatedUser = AuthService.getCurrentUser()
+        console.log("Header: User changed via storage:", updatedUser) // Debug log
+        setUser(updatedUser)
+      }
+    }
+
+    // Listen for custom events (when user logs in/out in same tab)
+    const handleAuthChange = () => {
+      const updatedUser = AuthService.getCurrentUser()
+      console.log("Header: User changed via custom event:", updatedUser) // Debug log
+      setUser(updatedUser)
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("authStateChanged", handleAuthChange)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("authStateChanged", handleAuthChange)
+    }
+  }, [])
+
+  const handleLogout = () => {
+    AuthService.logout()
+    setUser(null)
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event("authStateChanged"))
+    window.location.href = "/"
+  }
+
+  // Debug: Log current state
+  console.log("Header render - User:", user, "Loading:", isLoading)
 
   return (
     <header className="fixed w-full bg-black/90 backdrop-blur-sm z-50 py-5">
@@ -37,24 +84,49 @@ export default function Header() {
             <Link href="/booking" className="text-white hover:text-[#FF5E14] font-semibold transition-colors">
               Запись
             </Link>
-            <Link href="/admin" className="text-white hover:text-[#FF5E14] font-semibold transition-colors">
-              Админ
-            </Link>
+            {user && AuthService.isAdmin(user) && (
+              <Link href="/admin" className="text-white hover:text-[#FF5E14] font-semibold transition-colors">
+                Админ
+              </Link>
+            )}
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Section */}
           <div className="hidden md:flex gap-4">
-            <Link href="/login">
-              <Button
-                variant="outline"
-                className="border-[#FF5E14] text-[#FF5E14] hover:bg-[#FF5E14] hover:text-white rounded-full"
-              >
-                Вход
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button className="bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white rounded-full">Регистрация</Button>
-            </Link>
+            {isLoading ? (
+              <div className="text-white">Загрузка...</div>
+            ) : user ? (
+              // Logged in user options
+              <div className="flex items-center gap-4">
+                <span className="text-white text-sm">Привет, {user.name}!</span>
+                <Link href="/profile">
+                  <Button
+                    variant="outline"
+                    className="border-[#FF5E14] text-[#FF5E14] hover:bg-[#FF5E14] hover:text-white rounded-full"
+                  >
+                    Профиль
+                  </Button>
+                </Link>
+                <Button onClick={handleLogout} className="bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white rounded-full">
+                  Выход
+                </Button>
+              </div>
+            ) : (
+              // Not logged in options
+              <>
+                <Link href="/login">
+                  <Button
+                    variant="outline"
+                    className="border-[#FF5E14] text-[#FF5E14] hover:bg-[#FF5E14] hover:text-white rounded-full"
+                  >
+                    Вход
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button className="bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white rounded-full">Регистрация</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -85,19 +157,43 @@ export default function Header() {
               <Link href="/booking" className="text-white hover:text-[#FF5E14] font-semibold">
                 Запись
               </Link>
-              <Link href="/admin" className="text-white hover:text-[#FF5E14] font-semibold">
-                Админ
-              </Link>
-              <div className="flex gap-2 mt-4">
-                <Link href="/login">
-                  <Button variant="outline" className="border-[#FF5E14] text-[#FF5E14] text-sm">
-                    Вход
+              {user && AuthService.isAdmin(user) && (
+                <Link href="/admin" className="text-white hover:text-[#FF5E14] font-semibold">
+                  Админ
+                </Link>
+              )}
+
+              {isLoading ? (
+                <div className="text-white">Загрузка...</div>
+              ) : user ? (
+                // Logged in user options
+                <div className="flex flex-col gap-2 mt-4">
+                  <span className="text-white text-sm">Привет, {user.name}!</span>
+                  <Link href="/profile">
+                    <Button variant="outline" className="border-[#FF5E14] text-[#FF5E14] text-sm w-full">
+                      Профиль
+                    </Button>
+                  </Link>
+                  <Button
+                    onClick={handleLogout}
+                    className="bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white text-sm w-full"
+                  >
+                    Выход
                   </Button>
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white text-sm">Регистрация</Button>
-                </Link>
-              </div>
+                </div>
+              ) : (
+                // Not logged in options
+                <div className="flex gap-2 mt-4">
+                  <Link href="/login">
+                    <Button variant="outline" className="border-[#FF5E14] text-[#FF5E14] text-sm">
+                      Вход
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button className="bg-[#FF5E14] hover:bg-[#FF5E14]/90 text-white text-sm">Регистрация</Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}

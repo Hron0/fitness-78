@@ -229,3 +229,77 @@ export async function createContactMessage(
     throw error
   }
 }
+
+// Get bookings for a specific user
+export async function getUserBookings(userId: number): Promise<Booking[]> {
+  try {
+    console.log(`📊 Fetching bookings for user ${userId}...`)
+
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("user_id", userId)
+      .order("booking_date", { ascending: false })
+
+    if (bookingsError) {
+      console.error("❌ Error fetching bookings:", bookingsError.message)
+      throw new Error(`Failed to fetch bookings: ${bookingsError.message}`)
+    }
+
+    if (!bookingsData) {
+      console.log("⚠️ No bookings found")
+      return []
+    }
+
+    // Get trainers and workouts to populate booking details
+    const [trainersData, workoutsData] = await Promise.all([
+      supabase.from("coaches").select("*"),
+      supabase.from("workouts").select("*"),
+    ])
+
+    // Map bookings with trainer and workout details
+    const bookings: Booking[] = bookingsData.map((booking) => {
+      const trainer = trainersData.data?.find((t) => t.id === booking.trainer_id)
+      const workout = workoutsData.data?.find((w) => w.id === booking.workout_id)
+
+      return {
+        ...booking,
+        trainer: trainer
+          ? {
+              id: trainer.id,
+              name: trainer.name,
+              specialization: trainer.specialization,
+              experience_years: trainer.experience_years,
+              experience: trainer.experience_years,
+              rating: trainer.rating,
+              price_per_hour: trainer.price_per_hour,
+              description: trainer.description,
+              image_url: trainer.image_url,
+              created_at: trainer.created_at,
+              updated_at: trainer.updated_at,
+            }
+          : undefined,
+        workout: workout
+          ? {
+              id: workout.id,
+              title: workout.title,
+              description: workout.description,
+              duration: workout.duration,
+              difficulty: workout.difficulty,
+              category: workout.category,
+              trainer_id: workout.trainer_id,
+              image_url: workout.image_url,
+              created_at: workout.created_at,
+              updated_at: workout.updated_at,
+            }
+          : undefined,
+      }
+    })
+
+    console.log(`✅ Successfully fetched ${bookings.length} bookings`)
+    return bookings
+  } catch (error) {
+    console.error("❌ Error in getUserBookings:", error)
+    throw new Error("Failed to fetch user bookings")
+  }
+}

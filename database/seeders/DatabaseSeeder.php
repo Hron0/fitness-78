@@ -54,7 +54,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Анна Смирнова',
                 'specialization' => 'Кардио и жиросжигание',
                 'experience' => 4,
-                'description' => 'Специалист по снижению веса и кардио тренировкам. Поможет достичь идеальной формы.',
+                'description' => 'Специалист по снижению веса и кардио тренировкам. Поможет достич�� идеальной формы.',
                 'image_url' => 'images/trainers/anna.jpg',
                 'rating' => 4.7,
                 'price_per_hour' => 2200,

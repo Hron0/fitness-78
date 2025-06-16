@@ -45,6 +45,10 @@ export default function LoginPage() {
       if (user) {
         // Save user and redirect
         AuthService.saveUser(user)
+
+        // Dispatch custom event to notify header and other components
+        window.dispatchEvent(new Event("authStateChanged"))
+
         toast({
           title: "Вход выполнен",
           description: `Добро пожаловать, ${user.name}!`,

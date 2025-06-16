@@ -15,7 +15,7 @@ import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { getTrainers, getWorkouts, createBooking } from "@/lib/database"
-import { getAuthUser } from "@/lib/auth"
+import { AuthService } from "@/lib/auth"
 import type { Trainer, Workout } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "@/components/loading-spinner"
@@ -66,12 +66,27 @@ export default function BookingPage() {
     }
 
     fetchData()
-  }, [toast])
+  }, [])
+
+  useEffect(() => {
+    const user = AuthService.getCurrentUser()
+    if (!user) {
+      toast({
+        title: "Требуется авторизация",
+        description: "Для записи на тренировку необходимо войти в систему",
+        variant: "destructive",
+      })
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        window.location.href = "/login"
+      }, 2000)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const user = getAuthUser()
+    const user = AuthService.getCurrentUser()
     if (!user) {
       toast({
         title: "Ошибка",
