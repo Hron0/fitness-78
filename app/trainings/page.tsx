@@ -45,7 +45,7 @@ export default function TrainingsPage() {
     }
 
     fetchWorkouts()
-  }, [toast])
+  }, [])
 
   if (loading) {
     return (

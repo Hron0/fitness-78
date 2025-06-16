@@ -24,6 +24,45 @@ export async function debugDatabase() {
   }
 }
 
+// Check if required database tables exist
+export async function checkDatabaseTables(): Promise<void> {
+  try {
+    console.log("🔍 Checking database tables...")
+
+    // Check if coaches table exists and has data
+    const { data: coachesData, error: coachesError } = await supabase
+      .from("coaches")
+      .select("count", { count: "exact", head: true })
+
+    if (coachesError) {
+      throw new Error(`Coaches table error: ${coachesError.message}`)
+    }
+
+    // Check if workouts table exists
+    const { data: workoutsData, error: workoutsError } = await supabase
+      .from("workouts")
+      .select("count", { count: "exact", head: true })
+
+    if (workoutsError) {
+      throw new Error(`Workouts table error: ${workoutsError.message}`)
+    }
+
+    // Check if contact_messages table exists
+    const { data: messagesData, error: messagesError } = await supabase
+      .from("contact_messages")
+      .select("count", { count: "exact", head: true })
+
+    if (messagesError) {
+      throw new Error(`Contact messages table error: ${messagesError.message}`)
+    }
+
+    console.log("✅ All required database tables exist")
+  } catch (error) {
+    console.error("❌ Database tables check failed:", error)
+    throw new Error(`Database tables check failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+  }
+}
+
 // Get all trainers/coaches
 export async function getTrainers(): Promise<Trainer[]> {
   try {
@@ -46,10 +85,12 @@ export async function getTrainers(): Promise<Trainer[]> {
       id: coach.id,
       name: coach.name,
       specialization: coach.specialization,
-      experience: coach.experience_years, // Map experience_years to experience
+      experience_years: coach.experience_years,
+      experience: coach.experience_years, // Map experience_years to experience for compatibility
       rating: coach.rating,
       price_per_hour: coach.price_per_hour,
       description: coach.description,
+      image_url: coach.image_url,
       created_at: coach.created_at,
       updated_at: coach.updated_at,
     }))
@@ -58,7 +99,7 @@ export async function getTrainers(): Promise<Trainer[]> {
     return trainers
   } catch (error) {
     console.error("❌ Error in getTrainers:", error)
-    throw new Error("Failed to fetch trainers")
+    throw new Error(`Failed to fetch trainers: ${error instanceof Error ? error.message : "Unknown error"}`)
   }
 }
 
@@ -67,74 +108,59 @@ export async function getWorkouts(): Promise<Workout[]> {
   try {
     console.log("📊 Fetching workouts...")
 
-    // First try to get workouts with trainer relationship
-    const { data, error } = await supabase
-      .from("workouts")
-      .select(`
-        *,
-        coach:coaches(*)
-      `)
-      .order("title")
+    // Get workouts first
+    const { data: workoutsData, error: workoutsError } = await supabase.from("workouts").select("*").order("title")
 
-    if (error) {
-      console.error("❌ Error fetching workouts with relationship:", error.message)
-
-      // Fallback: get workouts without relationship
-      const { data: fallbackData, error: fallbackError } = await supabase.from("workouts").select("*").order("title")
-
-      if (fallbackError) {
-        throw new Error(`Failed to fetch workouts: ${fallbackError.message}`)
-      }
-
-      // Get coaches separately and map them
-      const { data: coaches } = await supabase.from("coaches").select("*")
-
-      const workouts: Workout[] = (fallbackData || []).map((workout) => {
-        const trainer = coaches?.find((coach) => coach.id === workout.coach_id)
-        return {
-          ...workout,
-          trainer: trainer
-            ? {
-                id: trainer.id,
-                name: trainer.name,
-                specialization: trainer.specialization,
-                experience: trainer.experience_years,
-                rating: trainer.rating,
-                price_per_hour: trainer.price_per_hour,
-                description: trainer.description,
-                created_at: trainer.created_at,
-                updated_at: trainer.updated_at,
-              }
-            : undefined,
-        }
-      })
-
-      console.log(`✅ Successfully fetched ${workouts.length} workouts (fallback)`)
-      return workouts
+    if (workoutsError) {
+      console.error("❌ Error fetching workouts:", workoutsError.message)
+      throw new Error(`Failed to fetch workouts: ${workoutsError.message}`)
     }
 
-    if (!data) {
+    if (!workoutsData) {
       console.log("⚠️ No workouts found")
       return []
     }
 
-    // Map the data to ensure proper structure
-    const workouts: Workout[] = data.map((workout) => ({
-      ...workout,
-      trainer: workout.coach
-        ? {
-            id: workout.coach.id,
-            name: workout.coach.name,
-            specialization: workout.coach.specialization,
-            experience: workout.coach.experience_years,
-            rating: workout.coach.rating,
-            price_per_hour: workout.coach.price_per_hour,
-            description: workout.coach.description,
-            created_at: workout.coach.created_at,
-            updated_at: workout.coach.updated_at,
-          }
-        : undefined,
-    }))
+    // Get coaches separately
+    const { data: coachesData, error: coachesError } = await supabase.from("coaches").select("*")
+
+    if (coachesError) {
+      console.warn("⚠️ Could not fetch coaches:", coachesError.message)
+    }
+
+    // Map workouts and attach trainer data if available
+    const workouts: Workout[] = workoutsData.map((workout) => {
+      // Find the trainer for this workout
+      const trainer = coachesData?.find((coach) => coach.id === workout.trainer_id)
+
+      return {
+        id: workout.id,
+        title: workout.title,
+        description: workout.description,
+        duration: workout.duration,
+        difficulty: workout.difficulty,
+        category: workout.category,
+        trainer_id: workout.trainer_id,
+        image_url: workout.image_url,
+        created_at: workout.created_at,
+        updated_at: workout.updated_at,
+        trainer: trainer
+          ? {
+              id: trainer.id,
+              name: trainer.name,
+              specialization: trainer.specialization,
+              experience_years: trainer.experience_years,
+              experience: trainer.experience_years,
+              rating: trainer.rating,
+              price_per_hour: trainer.price_per_hour,
+              description: trainer.description,
+              image_url: trainer.image_url,
+              created_at: trainer.created_at,
+              updated_at: trainer.updated_at,
+            }
+          : null,
+      }
+    })
 
     console.log(`✅ Successfully fetched ${workouts.length} workouts`)
     return workouts
@@ -151,8 +177,12 @@ export async function createBooking(booking: Omit<Booking, "id" | "created_at" |
       .from("bookings")
       .insert([
         {
-          ...booking,
-          coach_id: booking.trainer_id, // Map trainer_id to coach_id for database
+          user_id: booking.user_id,
+          trainer_id: booking.trainer_id,
+          workout_id: booking.workout_id,
+          booking_date: booking.booking_date,
+          booking_time: booking.booking_time,
+          status: booking.status || "pending",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },

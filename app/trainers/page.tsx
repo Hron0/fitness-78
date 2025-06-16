@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Star } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { getTrainers, checkDatabaseTables } from "@/lib/database"
+import { getTrainers } from "@/lib/database"
 import type { Trainer } from "@/lib/supabase"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { useToast } from "@/hooks/use-toast"
@@ -21,9 +21,7 @@ export default function TrainersPage() {
       try {
         setError(null)
 
-        // Check database tables first
-        await checkDatabaseTables()
-
+        // Directly fetch trainers without checking tables first
         const data = await getTrainers()
 
         // Transform data to handle experience_years vs experience
@@ -45,8 +43,8 @@ export default function TrainersPage() {
         const errorMessage = error instanceof Error ? error.message : "Неизвестная ошибка"
         setError(errorMessage)
         toast({
-          title: "Ошибка базы данных",
-          description: `${errorMessage}. Проверьте, что таблицы созданы и заполнены данными.`,
+          title: "Ошибка загрузки данных",
+          description: `${errorMessage}. Проверьте подключение к базе данных.`,
           variant: "destructive",
         })
       } finally {
@@ -55,7 +53,7 @@ export default function TrainersPage() {
     }
 
     fetchTrainers()
-  }, [toast])
+  }, [])
 
   if (loading) {
     return (
