@@ -5,10 +5,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1ac22132-a227-4cb8-9cf5-f73e441ecf6e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/app/workouts/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/toast.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/toaster.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/next.config.mjs" beforeDir="false" afterPath="$PROJECT_DIR$/next.config.mjs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/calendar.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/fitness_center.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/fitness_center_updated.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000001_create_users_table.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000001_create_users_table.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000002_create_trainers_table.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000002_create_trainers_table.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000003_create_workouts_table.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000003_create_workouts_table.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000004_create_bookings_table.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000004_create_bookings_table.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000005_create_contact_messages_table.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2024_01_01_000005_create_contact_messages_table.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/seeders/DatabaseSeeder.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/seeders/TrainerSeeder.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/seeders/UserSeeder.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/seeders/WorkoutSeeder.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/seeders/seed_data.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/update_images.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pnpm-lock.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pnpm-lock.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/seed-all-data.sql" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/seed-all-data.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,24 +55,33 @@
   &quot;associatedIndex&quot;: 6
 }</component>
   <component name="ProjectId" id="2yYoxHYhXJYkzWsXJODzoGOxEkm" />
+  <component name="ProjectLevelVcsManager">
+    <OptionsSetting value="false" id="Update" />
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "E:/Code's/fitness-78",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "pnpm",
-    "ts.external.directory.path": "E:\\Code's\\fitness-78\\node_modules\\typescript\\lib"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/Code's/fitness-78&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;pnpm&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;E:\\Code's\\fitness-78\\node_modules\\typescript\\lib&quot;
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\Code's\fitness-78\public" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -74,7 +101,22 @@
       <workItem from="1750022753363" duration="3297000" />
       <workItem from="1750028343565" duration="23000" />
       <workItem from="1750028367922" duration="305000" />
+      <workItem from="1750075868656" duration="1568000" />
+      <workItem from="1750096901214" duration="3076000" />
+      <workItem from="1750426576615" duration="614000" />
+      <workItem from="1750559287540" duration="11000" />
+      <workItem from="1750646987586" duration="922000" />
+      <workItem from="1750648880481" duration="490000" />
     </task>
+    <task id="LOCAL-00001" summary="Images &amp; DB Seed Query">
+      <option name="closed" value="true" />
+      <created>1750104191923</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1750104191923</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -82,5 +124,9 @@
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName=".env" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Images &amp; DB Seed Query" />
+    <option name="LAST_COMMIT_MESSAGE" value="Images &amp; DB Seed Query" />
   </component>
 </project>
