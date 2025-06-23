@@ -20,6 +20,7 @@ import { AuthService } from "@/lib/auth"
 import { TrainerForm } from "@/components/admin/trainer-form"
 import { WorkoutForm } from "@/components/admin/workout-form"
 import { getAllUserMessages } from "@/lib/database"
+import {Textarea} from "@/components/ui/textarea";
 
 export default function AdminPage() {
   const [trainers, setTrainers] = useState<Trainer[]>([])
@@ -248,7 +249,6 @@ export default function AdminPage() {
   }
 
   const createWorkout = async (workoutData: Omit<Workout, "id" | "created_at" | "updated_at">) => {
-    // 🔑 ensure trainer_id is either a real id or null
     const dataToSave = {
       ...workoutData,
       trainer_id: workoutData.trainer_id && workoutData.trainer_id > 0 ? workoutData.trainer_id : null,
@@ -411,9 +411,9 @@ export default function AdminPage() {
             <TabsTrigger value="bookings" className="data-[state=active]:bg-[#FF5E14]">
               Записи
             </TabsTrigger>
-            <TabsTrigger value="messages" className="data-[state=active]:bg-[#FF5E14]">
-              Контакты
-            </TabsTrigger>
+            {/*<TabsTrigger value="messages" className="data-[state=active]:bg-[#FF5E14]">*/}
+            {/*  Контакты*/}
+            {/*</TabsTrigger>*/}
             <TabsTrigger value="user-messages" className="data-[state=active]:bg-[#FF5E14]">
               Сообщения
             </TabsTrigger>
@@ -492,62 +492,62 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="messages" className="mt-6">
-            <Card className="bg-[#1E1E1E] border-none">
-              <CardHeader>
-                <CardTitle className="text-white">Контактные сообщения</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {messages.length === 0 ? (
-                    <p className="text-gray-400 text-center py-8">Сообщений пока нет</p>
-                  ) : (
-                    messages.map((message) => (
-                      <div key={message.id} className="bg-[#2A2A2A] p-4 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-bold text-white">{message.name}</h3>
-                            <p className="text-gray-300">{message.email}</p>
-                            {message.phone && <p className="text-gray-400">{message.phone}</p>}
-                          </div>
-                          <div className="flex gap-2">
-                            <Badge
-                              className={
-                                message.status === "replied"
-                                  ? "bg-green-600"
-                                  : message.status === "read"
-                                    ? "bg-blue-600"
-                                    : "bg-yellow-600"
-                              }
-                            >
-                              {message.status === "replied"
-                                ? "Отвечено"
-                                : message.status === "read"
-                                  ? "Прочитано"
-                                  : "Новое"}
-                            </Badge>
-                            {message.status === "new" && (
-                              <Button
-                                size="sm"
-                                className="bg-blue-600 hover:bg-blue-700"
-                                onClick={() => updateMessageStatus(message.id, "read")}
-                              >
-                                Отметить прочитанным
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-gray-300">{message.message}</p>
-                        <p className="text-gray-500 text-sm mt-2">
-                          {new Date(message.created_at).toLocaleString("ru-RU")}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {/*<TabsContent value="messages" className="mt-6">*/}
+          {/*  <Card className="bg-[#1E1E1E] border-none">*/}
+          {/*    <CardHeader>*/}
+          {/*      <CardTitle className="text-white">Контактные сообщения</CardTitle>*/}
+          {/*    </CardHeader>*/}
+          {/*    <CardContent>*/}
+          {/*      <div className="space-y-4">*/}
+          {/*        {messages.length === 0 ? (*/}
+          {/*          <p className="text-gray-400 text-center py-8">Сообщений пока нет</p>*/}
+          {/*        ) : (*/}
+          {/*          messages.map((message) => (*/}
+          {/*            <div key={message.id} className="bg-[#2A2A2A] p-4 rounded-lg">*/}
+          {/*              <div className="flex justify-between items-start mb-2">*/}
+          {/*                <div>*/}
+          {/*                  <h3 className="font-bold text-white">{message.name}</h3>*/}
+          {/*                  <p className="text-gray-300">{message.email}</p>*/}
+          {/*                  {message.phone && <p className="text-gray-400">{message.phone}</p>}*/}
+          {/*                </div>*/}
+          {/*                <div className="flex gap-2">*/}
+          {/*                  <Badge*/}
+          {/*                    className={*/}
+          {/*                      message.status === "replied"*/}
+          {/*                        ? "bg-green-600"*/}
+          {/*                        : message.status === "read"*/}
+          {/*                          ? "bg-blue-600"*/}
+          {/*                          : "bg-yellow-600"*/}
+          {/*                    }*/}
+          {/*                  >*/}
+          {/*                    {message.status === "replied"*/}
+          {/*                      ? "Отвечено"*/}
+          {/*                      : message.status === "read"*/}
+          {/*                        ? "Прочитано"*/}
+          {/*                        : "Новое"}*/}
+          {/*                  </Badge>*/}
+          {/*                  {message.status === "new" && (*/}
+          {/*                    <Button*/}
+          {/*                      size="sm"*/}
+          {/*                      className="bg-blue-600 hover:bg-blue-700"*/}
+          {/*                      onClick={() => updateMessageStatus(message.id, "read")}*/}
+          {/*                    >*/}
+          {/*                      Отметить прочитанным*/}
+          {/*                    </Button>*/}
+          {/*                  )}*/}
+          {/*                </div>*/}
+          {/*              </div>*/}
+          {/*              <p className="text-gray-300">{message.message}</p>*/}
+          {/*              <p className="text-gray-500 text-sm mt-2">*/}
+          {/*                {new Date(message.created_at).toLocaleString("ru-RU")}*/}
+          {/*              </p>*/}
+          {/*            </div>*/}
+          {/*          ))*/}
+          {/*        )}*/}
+          {/*      </div>*/}
+          {/*    </CardContent>*/}
+          {/*  </Card>*/}
+          {/*</TabsContent>*/}
 
           <TabsContent value="user-messages" className="mt-6">
             <Card className="bg-[#1E1E1E] border-none">
@@ -562,9 +562,10 @@ export default function AdminPage() {
                     userMessages.map((message) => (
                       <div key={message.id} className="bg-[#2A2A2A] p-4 rounded-lg">
                         <div className="flex justify-between items-start mb-2">
-                          <div>
+                          <div className={''}>
                             <h3 className="font-bold text-white">{message.user?.name}</h3>
                             <p className="text-gray-300">{message.user?.email}</p>
+                            {message.user?.phone && <p className="text-gray-400">{message.user?.phone}</p>}
                           </div>
                           <div className="flex gap-2">
                             <Badge className={message.status === "read" ? "bg-blue-600" : "bg-yellow-600"}>
@@ -581,7 +582,7 @@ export default function AdminPage() {
                             )}
                           </div>
                         </div>
-                        <p className="text-gray-300">{message.message}</p>
+                        <Textarea className="text-gray-300 break-all bg-transparent border-x-0 border-y-input min-h-[150px]" disabled>{message.message}</Textarea>
                         <p className="text-gray-500 text-sm mt-2">
                           {new Date(message.created_at).toLocaleString("ru-RU")}
                         </p>

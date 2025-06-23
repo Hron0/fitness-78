@@ -190,7 +190,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Message to Admin Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -241,7 +240,7 @@ export default function ProfilePage() {
                       </span>
                       {getMessageStatusBadge(message.status)}
                     </div>
-                    <p className="text-gray-700">{message.message}</p>
+                    <Textarea className="text-gray-700 bg-transparent min-h-[150px]">{message.message}</Textarea>
                   </div>
                 ))}
               </div>

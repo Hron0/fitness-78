@@ -364,7 +364,7 @@ export async function getAllUserMessages(): Promise<UserMessage[]> {
 
     const { data, error } = await supabase
       .from("user_messages")
-      .select("*, user:users(name, email)")
+      .select("*, user:users(name, email, phone)")
       .order("created_at", { ascending: false })
 
     if (error) {
