@@ -333,7 +333,7 @@ export default function AdminPage() {
             </h1>
             <p className="text-xl text-gray-300">Управление фитнес-центром Fitness+</p>
           </div>
-          <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2">
+          <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2 text-gray-700">
             <LogOut className="w-4 h-4" />
             Выйти
           </Button>
