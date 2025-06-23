@@ -77,6 +77,16 @@ export interface ContactMessage {
   updated_at: string
 }
 
+export interface UserMessage {
+  id: number
+  user_id: number
+  message: string
+  status: "new" | "read"
+  created_at: string
+  updated_at: string
+  user?: User
+}
+
 // Auth types
 export interface AuthUser {
   id: number

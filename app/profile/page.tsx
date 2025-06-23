@@ -3,22 +3,29 @@
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { AuthService } from "@/lib/auth"
-import { getUserBookings } from "@/lib/database"
-import type { AuthUser, Booking } from "@/lib/supabase"
+import { getUserBookings, getUserMessages, createUserMessage } from "@/lib/database"
+import type { AuthUser, Booking, UserMessage } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { User, Mail, Phone, Shield, Calendar, Clock, Dumbbell, UserCheck } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { User, Mail, Phone, Shield, Calendar, Clock, Dumbbell, UserCheck, MessageSquare, Send } from "lucide-react"
 import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { useToast } from "@/hooks/use-toast"
 
 export default function ProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState<AuthUser | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [userMessages, setUserMessages] = useState<UserMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [bookingsLoading, setBookingsLoading] = useState(false)
+  const [messagesLoading, setMessagesLoading] = useState(false)
+  const [newMessage, setNewMessage] = useState("")
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     const currentUser = AuthService.getCurrentUser()
@@ -29,8 +36,9 @@ export default function ProfilePage() {
     setUser(currentUser)
     setLoading(false)
 
-    // Fetch user bookings
+    // Fetch user data
     fetchUserBookings(currentUser.id)
+    fetchUserMessages(currentUser.id)
   }, [router])
 
   const fetchUserBookings = async (userId: number) => {
@@ -42,6 +50,47 @@ export default function ProfilePage() {
       console.error("Error fetching bookings:", error)
     } finally {
       setBookingsLoading(false)
+    }
+  }
+
+  const fetchUserMessages = async (userId: number) => {
+    setMessagesLoading(true)
+    try {
+      const messages = await getUserMessages(userId)
+      setUserMessages(messages)
+    } catch (error) {
+      console.error("Error fetching user messages:", error)
+    } finally {
+      setMessagesLoading(false)
+    }
+  }
+
+  const handleSendMessage = async () => {
+    if (!user || !newMessage.trim()) return
+
+    setSendingMessage(true)
+    try {
+      await createUserMessage({
+        user_id: user.id,
+        message: newMessage.trim(),
+      })
+
+      toast({
+        title: "Сообщение отправлено",
+        description: "Ваше сообщение успешно отправлено администрации",
+      })
+
+      setNewMessage("")
+      fetchUserMessages(user.id)
+    } catch (error) {
+      console.error("Error sending message:", error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отправить сообщение",
+        variant: "destructive",
+      })
+    } finally {
+      setSendingMessage(false)
     }
   }
 
@@ -60,6 +109,12 @@ export default function ProfilePage() {
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending
     return <Badge variant={config.variant}>{config.label}</Badge>
+  }
+
+  const getMessageStatusBadge = (status: string) => {
+    return (
+      <Badge variant={status === "read" ? "default" : "secondary"}>{status === "read" ? "Прочитано" : "Новое"}</Badge>
+    )
   }
 
   if (loading) {
@@ -132,6 +187,67 @@ export default function ProfilePage() {
                 </Button>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Message to Admin Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-6 w-6 text-orange-500" />
+              Связь с администрацией
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="message" className="text-sm font-medium">
+                Сообщение администрации
+              </label>
+              <Textarea
+                id="message"
+                placeholder="Напишите ваше сообщение администрации..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            <Button
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim() || sendingMessage}
+              className="bg-orange-500 hover:bg-orange-600 flex items-center gap-2"
+            >
+              {sendingMessage ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {sendingMessage ? "Отправка..." : "Отправить сообщение"}
+            </Button>
+
+            {/* Previous Messages */}
+            {messagesLoading ? (
+              <div className="flex justify-center py-4">
+                <LoadingSpinner />
+              </div>
+            ) : userMessages.length > 0 ? (
+              <div className="space-y-3 mt-6">
+                <h4 className="font-medium text-gray-900">Ваши сообщения</h4>
+                {userMessages.map((message) => (
+                  <div key={message.id} className="border rounded-lg p-3 bg-gray-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-sm text-gray-500">
+                        {format(new Date(message.created_at), "dd MMMM yyyy, HH:mm", { locale: ru })}
+                      </span>
+                      {getMessageStatusBadge(message.status)}
+                    </div>
+                    <p className="text-gray-700">{message.message}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm mt-4">У вас пока нет сообщений</p>
+            )}
           </CardContent>
         </Card>
 

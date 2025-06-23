@@ -4,20 +4,29 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, MessageSquare, Dumbbell, UserCheck, LogOut } from "lucide-react"
+import { Calendar, MessageSquare, Dumbbell, UserCheck, LogOut, Users } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
-import { supabase, type Trainer, type Workout, type Booking, type ContactMessage } from "@/lib/supabase"
+import {
+  supabase,
+  type Trainer,
+  type Workout,
+  type Booking,
+  type ContactMessage,
+  type UserMessage,
+} from "@/lib/supabase"
 import { AuthService } from "@/lib/auth"
 import { TrainerForm } from "@/components/admin/trainer-form"
 import { WorkoutForm } from "@/components/admin/workout-form"
+import { getAllUserMessages } from "@/lib/database"
 
 export default function AdminPage() {
   const [trainers, setTrainers] = useState<Trainer[]>([])
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [messages, setMessages] = useState<ContactMessage[]>([])
+  const [userMessages, setUserMessages] = useState<UserMessage[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { toast } = useToast()
@@ -56,6 +65,10 @@ export default function AdminPage() {
       if (workoutsRes.data) setWorkouts(workoutsRes.data)
       if (bookingsRes.data) setBookings(bookingsRes.data)
       if (messagesRes.data) setMessages(messagesRes.data)
+
+      // Load user messages
+      const userMessagesData = await getAllUserMessages()
+      setUserMessages(userMessagesData)
     } catch (error) {
       console.error("Error loading data:", error)
       toast({
@@ -110,6 +123,26 @@ export default function AdminPage() {
       loadData()
     } catch (error) {
       console.error("Error updating message:", error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить статус сообщения",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const updateUserMessageStatus = async (messageId: number, status: "new" | "read") => {
+    try {
+      await updateUserMessageStatus(messageId, status)
+
+      toast({
+        title: "Статус обновлен",
+        description: "Статус сообщения пользователя успешно изменен",
+      })
+
+      loadData()
+    } catch (error) {
+      console.error("Error updating user message:", error)
       toast({
         title: "Ошибка",
         description: "Не удалось обновить статус сообщения",
@@ -307,7 +340,7 @@ export default function AdminPage() {
         </div>
 
         {/* Статистика */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-12">
           <Card className="bg-[#1E1E1E] border-none">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -348,7 +381,7 @@ export default function AdminPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Новые сообщения</p>
+                  <p className="text-gray-400 text-sm">Контакты</p>
                   <p className="text-3xl font-bold text-[#FF5E14]">
                     {messages.filter((m) => m.status === "new").length}
                   </p>
@@ -357,14 +390,31 @@ export default function AdminPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="bg-[#1E1E1E] border-none">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Сообщения</p>
+                  <p className="text-3xl font-bold text-[#FF5E14]">
+                    {userMessages.filter((m) => m.status === "new").length}
+                  </p>
+                </div>
+                <Users className="w-8 h-8 text-[#FF5E14]" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="bookings" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-[#1E1E1E]">
+          <TabsList className="grid w-full grid-cols-5 bg-[#1E1E1E]">
             <TabsTrigger value="bookings" className="data-[state=active]:bg-[#FF5E14]">
               Записи
             </TabsTrigger>
             <TabsTrigger value="messages" className="data-[state=active]:bg-[#FF5E14]">
+              Контакты
+            </TabsTrigger>
+            <TabsTrigger value="user-messages" className="data-[state=active]:bg-[#FF5E14]">
               Сообщения
             </TabsTrigger>
             <TabsTrigger value="trainers" className="data-[state=active]:bg-[#FF5E14]">
@@ -481,6 +531,50 @@ export default function AdminPage() {
                                 size="sm"
                                 className="bg-blue-600 hover:bg-blue-700"
                                 onClick={() => updateMessageStatus(message.id, "read")}
+                              >
+                                Отметить прочитанным
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-gray-300">{message.message}</p>
+                        <p className="text-gray-500 text-sm mt-2">
+                          {new Date(message.created_at).toLocaleString("ru-RU")}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="user-messages" className="mt-6">
+            <Card className="bg-[#1E1E1E] border-none">
+              <CardHeader>
+                <CardTitle className="text-white">Сообщения пользователей</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {userMessages.length === 0 ? (
+                    <p className="text-gray-400 text-center py-8">Сообщений от пользователей пока нет</p>
+                  ) : (
+                    userMessages.map((message) => (
+                      <div key={message.id} className="bg-[#2A2A2A] p-4 rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-bold text-white">{message.user?.name}</h3>
+                            <p className="text-gray-300">{message.user?.email}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge className={message.status === "read" ? "bg-blue-600" : "bg-yellow-600"}>
+                              {message.status === "read" ? "Прочитано" : "Новое"}
+                            </Badge>
+                            {message.status === "new" && (
+                              <Button
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700"
+                                onClick={() => updateUserMessageStatus(message.id, "read")}
                               >
                                 Отметить прочитанным
                               </Button>

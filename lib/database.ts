@@ -1,5 +1,5 @@
 import { supabase } from "./supabase"
-import type { Trainer, Workout, Booking, ContactMessage } from "./supabase"
+import type { Trainer, Workout, Booking, ContactMessage, UserMessage } from "./supabase"
 
 // Debug function to check database connection and tables
 export async function debugDatabase() {
@@ -301,5 +301,103 @@ export async function getUserBookings(userId: number): Promise<Booking[]> {
   } catch (error) {
     console.error("❌ Error in getUserBookings:", error)
     throw new Error("Failed to fetch user bookings")
+  }
+}
+
+// Create a user message to admin
+export async function createUserMessage(
+  message: Omit<UserMessage, "id" | "created_at" | "updated_at" | "status">,
+): Promise<UserMessage> {
+  try {
+    const { data, error } = await supabase
+      .from("user_messages")
+      .insert([
+        {
+          ...message,
+          status: "new",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to create user message: ${error.message}`)
+    }
+
+    return data
+  } catch (error) {
+    console.error("Error creating user message:", error)
+    throw error
+  }
+}
+
+// Get user messages for a specific user
+export async function getUserMessages(userId: number): Promise<UserMessage[]> {
+  try {
+    console.log(`📊 Fetching user messages for user ${userId}...`)
+
+    const { data, error } = await supabase
+      .from("user_messages")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("❌ Error fetching user messages:", error.message)
+      throw new Error(`Failed to fetch user messages: ${error.message}`)
+    }
+
+    console.log(`✅ Successfully fetched ${data?.length || 0} user messages`)
+    return data || []
+  } catch (error) {
+    console.error("❌ Error in getUserMessages:", error)
+    throw new Error("Failed to fetch user messages")
+  }
+}
+
+// Get all user messages for admin dashboard
+export async function getAllUserMessages(): Promise<UserMessage[]> {
+  try {
+    console.log("📊 Fetching all user messages for admin...")
+
+    const { data, error } = await supabase
+      .from("user_messages")
+      .select("*, user:users(name, email)")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("❌ Error fetching all user messages:", error.message)
+      throw new Error(`Failed to fetch all user messages: ${error.message}`)
+    }
+
+    console.log(`✅ Successfully fetched ${data?.length || 0} user messages`)
+    return data || []
+  } catch (error) {
+    console.error("❌ Error in getAllUserMessages:", error)
+    throw new Error("Failed to fetch all user messages")
+  }
+}
+
+// Update user message status
+export async function updateUserMessageStatus(messageId: number, status: "new" | "read"): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("user_messages")
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", messageId)
+
+    if (error) {
+      throw new Error(`Failed to update user message status: ${error.message}`)
+    }
+
+    console.log(`✅ Successfully updated user message ${messageId} status to ${status}`)
+  } catch (error) {
+    console.error("❌ Error in updateUserMessageStatus:", error)
+    throw error
   }
 }
