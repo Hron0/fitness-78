@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { supabase, type Trainer, type Workout, type Booking, type ContactMessage } from "@/lib/supabase"
 import { AuthService } from "@/lib/auth"
+import { TrainerForm } from "@/components/admin/trainer-form"
+import { WorkoutForm } from "@/components/admin/workout-form"
 
 export default function AdminPage() {
   const [trainers, setTrainers] = useState<Trainer[]>([])
@@ -19,6 +21,11 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { toast } = useToast()
+
+  const [showTrainerForm, setShowTrainerForm] = useState(false)
+  const [showWorkoutForm, setShowWorkoutForm] = useState(false)
+  const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null)
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null)
 
   useEffect(() => {
     // Check if user is admin
@@ -118,6 +125,158 @@ export default function AdminPage() {
       description: "Вы успешно вышли из системы",
     })
     router.push("/login")
+  }
+
+  const createTrainer = async (trainerData: Omit<Trainer, "id" | "created_at" | "updated_at">) => {
+    try {
+      const { data, error } = await supabase
+        .from("coaches")
+        .insert([
+          {
+            ...trainerData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      toast({
+        title: "Тренер добавлен",
+        description: "Новый тренер успешно добавлен",
+      })
+
+      loadData()
+      setShowTrainerForm(false)
+    } catch (error) {
+      console.error("Error creating trainer:", error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить тренера",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const updateTrainer = async (id: number, trainerData: Partial<Trainer>) => {
+    try {
+      const { error } = await supabase
+        .from("coaches")
+        .update({
+          ...trainerData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+
+      if (error) throw error
+
+      toast({
+        title: "Тренер обновлен",
+        description: "Данные тренера успешно обновлены",
+      })
+
+      loadData()
+      setEditingTrainer(null)
+      setShowTrainerForm(false)
+    } catch (error) {
+      console.error("Error updating trainer:", error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить данные тренера",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const deleteTrainer = async (id: number) => {
+    if (!confirm("Вы уверены, что хотите удалить этого тренера?")) return
+
+    try {
+      const { error } = await supabase.from("coaches").delete().eq("id", id)
+
+      if (error) throw error
+
+      toast({
+        title: "Тренер удален",
+        description: "Тренер успешно удален",
+      })
+
+      loadData()
+    } catch (error) {
+      console.error("Error deleting trainer:", error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить тренера",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const createWorkout = async (workoutData: Omit<Workout, "id" | "created_at" | "updated_at">) => {
+    // 🔑 ensure trainer_id is either a real id or null
+    const dataToSave = {
+      ...workoutData,
+      trainer_id: workoutData.trainer_id && workoutData.trainer_id > 0 ? workoutData.trainer_id : null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    try {
+      const { error } = await supabase.from("workouts").insert([dataToSave])
+      if (error) throw error
+      toast({ title: "Тренировка добавлена", description: "Новая тренировка успешно добавлена" })
+      loadData()
+      setShowWorkoutForm(false)
+    } catch (error) {
+      console.error("Error creating workout:", error)
+      toast({ title: "Ошибка", description: "Не удалось добавить тренировку", variant: "destructive" })
+    }
+  }
+
+  const updateWorkout = async (id: number, workoutData: Partial<Workout>) => {
+    const dataToSave = {
+      ...workoutData,
+      trainer_id: workoutData.trainer_id && workoutData.trainer_id > 0 ? workoutData.trainer_id : null,
+      updated_at: new Date().toISOString(),
+    }
+
+    try {
+      const { error } = await supabase.from("workouts").update(dataToSave).eq("id", id)
+      if (error) throw error
+      toast({ title: "Тренировка обновлена", description: "Данные тренировки успешно обновлены" })
+      loadData()
+      setEditingWorkout(null)
+      setShowWorkoutForm(false)
+    } catch (error) {
+      console.error("Error updating workout:", error)
+      toast({ title: "Ошибка", description: "Не удалось обновить данные тренировки", variant: "destructive" })
+    }
+  }
+
+  const deleteWorkout = async (id: number) => {
+    if (!confirm("Вы уверены, что хотите удалить эту тренировку?")) return
+
+    try {
+      const { error } = await supabase.from("workouts").delete().eq("id", id)
+
+      if (error) throw error
+
+      toast({
+        title: "Тренировка удалена",
+        description: "Тренировка успешно удалена",
+      })
+
+      loadData()
+    } catch (error) {
+      console.error("Error deleting workout:", error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить тренировку",
+        variant: "destructive",
+      })
+    }
   }
 
   if (loading) {
@@ -342,23 +501,46 @@ export default function AdminPage() {
 
           <TabsContent value="trainers" className="mt-6">
             <Card className="bg-[#1E1E1E] border-none">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-white">Управление тренерами</CardTitle>
+                <Button
+                  onClick={() => {
+                    setEditingTrainer(null)
+                    setShowTrainerForm(true)
+                  }}
+                  className="bg-[#FF5E14] hover:bg-[#FF5E14]/90"
+                >
+                  Добавить тренера
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {trainers.map((trainer) => (
                     <div key={trainer.id} className="bg-[#2A2A2A] p-4 rounded-lg">
+                      {trainer.image_url && (
+                        <img
+                          src={trainer.image_url || "/placeholder.svg"}
+                          alt={trainer.name}
+                          className="w-full h-32 object-cover rounded-lg mb-3"
+                        />
+                      )}
                       <h3 className="font-bold text-white mb-2">{trainer.name}</h3>
                       <p className="text-gray-300 mb-1">{trainer.specialization}</p>
                       <p className="text-gray-400 text-sm mb-2">Опыт: {trainer.experience_years} лет</p>
                       <p className="text-gray-400 text-sm mb-2">Рейтинг: {trainer.rating}/5</p>
-                      <p className="text-[#FF5E14] font-bold">{trainer.price_per_hour} ₽/час</p>
-                      <div className="flex gap-2 mt-3">
-                        <Button size="sm" variant="outline">
+                      <p className="text-[#FF5E14] font-bold mb-3">{trainer.price_per_hour} ₽/час</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingTrainer(trainer)
+                            setShowTrainerForm(true)
+                          }}
+                        >
                           Редактировать
                         </Button>
-                        <Button size="sm" variant="destructive">
+                        <Button size="sm" variant="destructive" onClick={() => deleteTrainer(trainer.id)}>
                           Удалить
                         </Button>
                       </div>
@@ -371,22 +553,46 @@ export default function AdminPage() {
 
           <TabsContent value="workouts" className="mt-6">
             <Card className="bg-[#1E1E1E] border-none">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-white">Управление тренировками</CardTitle>
+                <Button
+                  onClick={() => {
+                    setEditingWorkout(null)
+                    setShowWorkoutForm(true)
+                  }}
+                  className="bg-[#FF5E14] hover:bg-[#FF5E14]/90"
+                >
+                  Добавить тренировку
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {workouts.map((workout) => (
                     <div key={workout.id} className="bg-[#2A2A2A] p-4 rounded-lg">
+                      {workout.image_url && (
+                        <img
+                          src={workout.image_url || "/placeholder.svg"}
+                          alt={workout.title}
+                          className="w-full h-32 object-cover rounded-lg mb-3"
+                        />
+                      )}
                       <h3 className="font-bold text-white mb-2">{workout.title}</h3>
+                      <p className="text-gray-300 text-sm mb-2 line-clamp-2">{workout.description}</p>
                       <p className="text-gray-400 text-sm mb-2">
-                        {workout.duration} мин • {workout.difficulty}
+                        {workout.duration} мин • {workout.difficulty} • {workout.category}
                       </p>
-                      <div className="flex gap-2 mt-3">
-                        <Button size="sm" variant="outline">
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingWorkout(workout)
+                            setShowWorkoutForm(true)
+                          }}
+                        >
                           Редактировать
                         </Button>
-                        <Button size="sm" variant="destructive">
+                        <Button size="sm" variant="destructive" onClick={() => deleteWorkout(workout.id)}>
                           Удалить
                         </Button>
                       </div>
@@ -398,6 +604,30 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
+      {/* Trainer Form Modal */}
+      {showTrainerForm && (
+        <TrainerForm
+          trainer={editingTrainer}
+          onSubmit={editingTrainer ? (data) => updateTrainer(editingTrainer.id, data) : createTrainer}
+          onCancel={() => {
+            setShowTrainerForm(false)
+            setEditingTrainer(null)
+          }}
+        />
+      )}
+
+      {/* Workout Form Modal */}
+      {showWorkoutForm && (
+        <WorkoutForm
+          workout={editingWorkout}
+          trainers={trainers}
+          onSubmit={editingWorkout ? (data) => updateWorkout(editingWorkout.id, data) : createWorkout}
+          onCancel={() => {
+            setShowWorkoutForm(false)
+            setEditingWorkout(null)
+          }}
+        />
+      )}
     </div>
   )
 }

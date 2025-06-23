@@ -96,6 +96,7 @@ export default function BookingPage() {
       return
     }
 
+    // Only validate when actually submitting
     if (!selectedTrainer || !selectedWorkout || !selectedDate || !selectedTime) {
       toast({
         title: "Ошибка",
