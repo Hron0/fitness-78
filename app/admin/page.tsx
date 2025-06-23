@@ -110,7 +110,7 @@ export default function AdminPage() {
   const updateMessageStatus = async (messageId: number, status: string) => {
     try {
       const { error } = await supabase
-        .from("contact_messages")
+        .from("user_messages")
         .update({ status, updated_at: new Date().toISOString() })
         .eq("id", messageId)
 
@@ -132,25 +132,6 @@ export default function AdminPage() {
     }
   }
 
-  const updateUserMessageStatus = async (messageId: number, status: "new" | "read") => {
-    try {
-      await updateUserMessageStatus(messageId, status)
-
-      toast({
-        title: "Статус обновлен",
-        description: "Статус сообщения пользователя успешно изменен",
-      })
-
-      loadData()
-    } catch (error) {
-      console.error("Error updating user message:", error)
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить статус сообщения",
-        variant: "destructive",
-      })
-    }
-  }
 
   const handleLogout = () => {
     AuthService.logout()
@@ -575,7 +556,7 @@ export default function AdminPage() {
                               <Button
                                 size="sm"
                                 className="bg-blue-600 hover:bg-blue-700"
-                                onClick={() => updateUserMessageStatus(message.id, "read")}
+                                onClick={() => updateMessageStatus(message.id, "read")}
                               >
                                 Отметить прочитанным
                               </Button>
